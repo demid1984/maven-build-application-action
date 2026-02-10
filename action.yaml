@@ -54,6 +54,7 @@ runs:
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
+        registry: ${{ inputs.registry }}
         username: ${{ inputs.docker-username }}
         password: ${{ inputs.docker-password }}
 
@@ -61,7 +62,6 @@ runs:
       shell: bash
       env:
         IMAGE_BUILDER: ${{ inputs.image-builder }}
-        REGISTRY: ${{ inputs.registry }}
         REGISTRY_REPOSITORY: ${{ inputs.registry-repository }}
       run: |
         # Validate image builder
@@ -95,6 +95,6 @@ runs:
         echo "Running: $CMD"
         $CMD
         
-        docker tag ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
-        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
-        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        docker tag ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        docker push ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
+        docker push ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
