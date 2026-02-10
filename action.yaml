@@ -1,0 +1,100 @@
+name: 'Maven build and publish to docker'
+description: 'Запуск сборки докер образа и публикация в реестре'
+author: 'demid1984'
+branding:
+  icon: 'package'
+  color: 'blue'
+
+inputs:
+  registry:
+    description: 'Адрес docker registry'
+    required: true
+  registry-repository:
+    description: 'Имя docker registry репозитория'
+    required: true
+  docker-username:
+    description: 'Имя пользователя реестра'
+    required: false
+  docker-password:
+    description: 'Пароль пользователя реестра'
+    required: false
+  image-builder:
+    description: >
+      Тип сборщика образа. 'spring' → spring-boot:build-image, 'jib' → jib:build
+    required: true
+  m2-settings:
+    description: 'Путь к файлу settings.xml'
+    required: false
+  profile-name:
+    description: 'Имя профиля Maven'
+    required: false
+  maven-args:
+    description: 'Дополнительные аргументы Maven'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check out the repo
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}  # Чекаутим текущую ветку (например, refs/heads/main)
+        fetch-depth: 0          # Скачиваем всю историю
+
+    - name: Extract project info
+      id: project-info
+      shell: bash
+      run: |
+        VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+        APPLICATION_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+        echo "Extracted application name with version: $APPLICATION_NAME:$VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "application=$APPLICATION_NAME" >> $GITHUB_OUTPUT
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ inputs.docker-username }}
+        password: ${{ inputs.docker-password }}
+
+    - name: Build image and publish
+      shell: bash
+      env:
+        IMAGE_BUILDER: ${{ inputs.image-builder }}
+        REGISTRY: ${{ inputs.registry }}
+        REGISTRY_REPOSITORY: ${{ inputs.registry-repository }}
+      run: |
+        # Validate image builder
+        if [[ "$IMAGE_BUILDER" != "spring" && "$IMAGE_BUILDER" != "jib" ]]; then
+          echo "❌ Invalid image-builder: '$IMAGE_BUILDER'. Must be 'spring' or 'jib'."
+          exit 1
+        fi
+        
+        case "$IMAGE_BUILDER" in
+          spring)
+            CMD="./mvnw spring-boot:build-image -DskipTests "
+            ;;
+          jib)
+            CMD="./mvnw clean compile jib:build -DskipTests "
+            ;;
+        esac
+        
+        
+        if [ -f "${{ inputs.m2-settings }}" ]; then
+          CMD="$CMD -s ${{ inputs.m2-settings }}"
+        fi
+
+        if [ -n "${{ inputs.profile-name }}" ]; then
+          CMD="$CMD -P ${{ inputs.profile-name }}"
+        fi
+
+        if [ -n "${{ inputs.maven-args }}" ]; then
+          CMD="$CMD ${{ inputs.maven-args }}"
+        fi
+
+        echo "Running: $CMD"
+        $CMD
+        
+        docker tag ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
+        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
