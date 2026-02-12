@@ -41,6 +41,21 @@ runs:
         ref: ${{ github.ref }}  # Чекаутим текущую ветку (например, refs/heads/main)
         fetch-depth: 0          # Скачиваем всю историю
 
+    - name: Debug DOCKER_HOST
+      shell: bash
+      run: |
+        echo "=== DOCKER_HOST DEBUG ==="
+        echo "1. Raw output with quotes: '${DOCKER_HOST}'"
+        echo "2. Hex dump:"
+        echo -n "$DOCKER_HOST" | hexdump -C
+        echo "3. printf %q:"
+        printf '%q\n' "$DOCKER_HOST"
+        echo "4. Length: ${#DOCKER_HOST}"
+        echo "5. EOF marker: ---${DOCKER_HOST}---"
+        echo "6. Tr -c (show invisible chars):"
+        echo "$DOCKER_HOST" | tr -c '[:graph:]' '?'
+        echo "========================="
+
     - name: Extract project info
       id: project-info
       shell: bash
