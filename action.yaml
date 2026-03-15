@@ -22,6 +22,12 @@ inputs:
     description: >
       Тип сборщика образа. 'spring' → spring-boot:build-image, 'jib' → jib:build
     required: true
+  java-version:
+    description: 'Версия Java'
+    required: true
+  distribution:
+    description: 'Дистрибутив Java'
+    required: true
   m2-settings:
     description: 'Путь к файлу settings.xml'
     required: false
@@ -40,6 +46,13 @@ runs:
       with:
         ref: ${{ github.ref }}  # Чекаутим текущую ветку (например, refs/heads/main)
         fetch-depth: 0          # Скачиваем всю историю
+
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.distribution }}
 
     - name: Extract project info
       id: project-info
