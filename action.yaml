@@ -76,6 +76,7 @@ runs:
       env:
         IMAGE_BUILDER: ${{ inputs.image-builder }}
         REGISTRY_REPOSITORY: ${{ inputs.registry-repository }}
+        REGISTRY: ${{ inputs.registry }}
       run: |
         # Validate image builder
         if [[ "$IMAGE_BUILDER" != "spring" && "$IMAGE_BUILDER" != "jib" ]]; then
@@ -108,6 +109,6 @@ runs:
         echo "Running: $CMD"
         $CMD
         
-        docker tag ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
-        docker push ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
-        docker push ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        docker tag ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
+        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
