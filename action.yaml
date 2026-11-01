@@ -42,14 +42,14 @@ runs:
   using: "composite"
   steps:
     - name: Check out the repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.ref }}  # Чекаутим текущую ветку (например, refs/heads/main)
         fetch-depth: 0          # Скачиваем всю историю
 
 
     - name: Setup Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.distribution }}
@@ -125,6 +125,9 @@ runs:
         echo "Running: $CMD"
         $CMD
         
-        docker tag ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
-        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
-        docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        if [ "spring" = "$IMAGE_BUILDER" ]
+        then
+          docker tag ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }} ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:${{ steps.project-info.outputs.version }}
+          docker push ${{ env.REGISTRY }}/${{ env.REGISTRY_REPOSITORY }}/${{ steps.project-info.outputs.application }}:latest
+        fi
